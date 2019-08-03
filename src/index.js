@@ -18,13 +18,7 @@ const drag = (radius, cx, cy) => ({ x, y }) => {
   };
 };
 
-function getDegAngle(x0, y0, x1, y1) {
-  const y = y1 - y0;
-  const x = x1 - x0;
-  return Math.atan2(y, x);
-}
-
-const find_angle = _.memoize((p0, p1, c) => {
+const find_angle = (p0, p1, c) => {
   var p0c = Math.sqrt(Math.pow(c.x - p0.x, 2) + Math.pow(c.y - p0.y, 2)); // p0->c (b)
   var p1c = Math.sqrt(Math.pow(c.x - p1.x, 2) + Math.pow(c.y - p1.y, 2)); // p1->c (a)
   var p0p1 = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2)); // p0->p1 (c)
@@ -32,11 +26,11 @@ const find_angle = _.memoize((p0, p1, c) => {
     (180 / Math.PI) *
     Math.acos((p1c * p1c + p0c * p0c - p0p1 * p0p1) / (2 * p1c * p0c))
   );
-});
+};
 
 const arcLength = (angle, r) => (angle / 360) * (2 * Math.PI * r);
 
-const Control = ({
+const ControllerSVG = ({
   toggleRecord,
   svgRef,
   rockPos,
@@ -57,14 +51,6 @@ const Control = ({
   let scp = find_angle(scissorPos, paperPos, center);
   let rcp = find_angle(rockPos, paperPos, center);
 
-  useEffect(() => {
-    onArcChange({
-      rock: (arcLength(rcs) / circ) * 100,
-      paper: (arcLength(scp) / circ) * 100,
-      scissor: (arcLength(rcp) / circ) * 100
-    });
-  }, [rcs, scp, rcp, circ, onArcChange]);
-
   let d = { rcs, scp, rcp };
   if (rcs + scp + rcp < 360) {
     const [largest, ...rest] = Object.entries({ rcs, scp, rcp }).sort(
@@ -78,12 +64,20 @@ const Control = ({
   const scissorToPaper = arcLength(d.scp, r);
   const paperToRock = arcLength(d.rcp, r);
 
+  useEffect(() => {
+    onArcChange({
+      rock: (rockToScissor / circ) * 100,
+      paper: (scissorToPaper / circ) * 100,
+      scissor: (paperToRock / circ) * 100
+    });
+  }, [rockToScissor, scissorToPaper, paperToRock, circ, onArcChange]);
+
   return (
     <svg
       key="control"
       height="100"
       width="100"
-      viewBox={`0 0 ${vSize} ${vSize}`}
+      // viewBox={`0 0 ${vSize} ${vSize}`}
       ref={svgRef}
       style={{
         position: "fixed",
@@ -170,21 +164,18 @@ const Control = ({
   );
 };
 
-function App() {
-  const dragControl = drag(45, 50, 50);
-
+const useHandleController = ({ vSize = 100, radius = (vSize * 0.9) / 2 }) => {
   const svgRef = useRef(null);
+  const dragControl = drag(radius, vSize / 2, vSize / 2);
   const [powerLevels, setPowerLevels] = useState({
     rock: 0,
     paper: 0,
     scissor: 0
   });
-  console.log(powerLevels);
+
   const [rockPos, setRockPos] = useState(dragControl({ x: 40, y: 75 }));
   const [paperPos, setPaperPos] = useState(dragControl({ x: 0, y: 0 }));
-
   const [scissorPos, setScissorPos] = useState(dragControl({ x: 200, y: 200 }));
-
   const [record, toggleRecord] = useState(false);
 
   const handler = useCallback(
@@ -212,20 +203,30 @@ function App() {
 
   useEventListener("mousemove", handler);
 
+  const Controller = (props = {}) => (
+    <ControllerSVG
+      {...props}
+      key="controlComponent"
+      rockPos={rockPos}
+      svgRef={svgRef}
+      toggleRecord={toggleRecord}
+      paperPos={paperPos}
+      scissorPos={scissorPos}
+      onArcChange={setPowerLevels}
+    />
+  );
+  return { Controller, powerLevels };
+};
+
+export const App = () => {
+  const { Controller, powerLevels } = useHandleController({});
+  console.log(powerLevels);
   return (
     <div className="App">
-      <Control
-        key="controlComponent"
-        rockPos={rockPos}
-        svgRef={svgRef}
-        toggleRecord={toggleRecord}
-        paperPos={paperPos}
-        scissorPos={scissorPos}
-        onArcChange={setPowerLevels}
-      />
+      <Controller />
     </div>
   );
-}
+};
 
 const rootElement = document.getElementById("root");
 ReactDOM.render(<App />, rootElement);
