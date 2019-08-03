@@ -1,0 +1,41 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+svg {
+  background: yellow;
+}
+
+body {
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+}
+
+#canvas {
+  background: linear-gradient(#9ff781, #f3f781);
+}
+
+.copy {
+  position: absolute;
+  top: 45%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+  font-family: "Futura", "Helvetica Neue", Helvetica;
+  color: #333;
+
+  h1 {
+    margin: 0;
+    color: white;
+    letter-spacing: 1px;
+    font-size: 7vmin;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+  }
+}
